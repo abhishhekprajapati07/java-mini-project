@@ -1,0 +1,16 @@
+# Root Git Ignore
+target/
+*.class
+*.jar
+*.war
+node_modules/
+dist/
+dist-ssr/
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml

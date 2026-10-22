@@ -1,0 +1,298 @@
+{
+  "info": {
+    "name": "LifeSaver - Blood Donation and Donor Management System API",
+    "_postman_id": "lifesaver-college-mini-project-api",
+    "description": "Comprehensive Postman API collection for the LifeSaver Full-Stack Java mini project (Spring Boot + React + JDBC + MySQL). Covers public endpoints, donor CRUD, blood request workflows, and session-based admin authentication.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Statistics",
+      "item": [
+        {
+          "name": "GET Application & Database Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "description": "Returns application health status 'UP' and independent database connectivity status without failing the application status check."
+          }
+        },
+        {
+          "name": "GET Live Aggregated Statistics",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stats",
+            "description": "Returns real-time metrics calculated from database tables (total donors, available donors, requests count, status breakdown)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Donor Management",
+      "item": [
+        {
+          "name": "POST Register Donor (Valid)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/donors",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Kavita Deshmukh\",\n  \"email\": \"kavita.deshmukh@demo.mail\",\n  \"contactNumber\": \"9876543210\",\n  \"bloodGroup\": \"O+\",\n  \"city\": \"Pune\",\n  \"area\": \"Kothrud\",\n  \"available\": true\n}"
+            },
+            "description": "Registers a new voluntary blood donor. Expected HTTP 201 Created."
+          }
+        },
+        {
+          "name": "POST Register Donor (Duplicate Email Conflict)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/donors",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Duplicate User\",\n  \"email\": \"kavita.deshmukh@demo.mail\",\n  \"contactNumber\": \"9876543210\",\n  \"bloodGroup\": \"O+\",\n  \"city\": \"Pune\",\n  \"area\": \"Kothrud\",\n  \"available\": true\n}"
+            },
+            "description": "Tests unique email constraint. Expected HTTP 409 Conflict."
+          }
+        },
+        {
+          "name": "POST Register Donor (Invalid Blood Group)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/donors",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Bad Group Test\",\n  \"email\": \"bad.bg@demo.mail\",\n  \"contactNumber\": \"9876543210\",\n  \"bloodGroup\": \"Z-Positive\",\n  \"city\": \"Mumbai\",\n  \"available\": true\n}"
+            },
+            "description": "Tests validation for invalid blood group format. Expected HTTP 400 Bad Request."
+          }
+        },
+        {
+          "name": "GET Public Search Donors (Filtered & Masked)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/donors?bloodGroup=O+&city=Pune&available=true&page=1&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["donors"],
+              "query": [
+                { "key": "bloodGroup", "value": "O+" },
+                { "key": "city", "value": "Pune" },
+                { "key": "available", "value": "true" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "description": "Public search. Contact numbers are masked (e.g., +91 98******10) for anonymous visitors."
+          }
+        },
+        {
+          "name": "GET Single Donor by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/donors/1",
+            "description": "Returns single donor record. Expected HTTP 200 OK."
+          }
+        },
+        {
+          "name": "PUT Update Donor Profile",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/donors/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Aarav Sharma Updated\",\n  \"contactNumber\": \"9876501001\",\n  \"bloodGroup\": \"O+\",\n  \"city\": \"Delhi\",\n  \"area\": \"Connaught Place Central\",\n  \"available\": true\n}"
+            },
+            "description": "Updates donor contact or location details."
+          }
+        },
+        {
+          "name": "PATCH Toggle Donor Availability",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/donors/1/availability?available=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["donors", "1", "availability"],
+              "query": [
+                { "key": "available", "value": "false" }
+              ]
+            },
+            "description": "Quick toggle of voluntary donor availability."
+          }
+        },
+        {
+          "name": "DELETE Donor Record (Admin Protected)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/donors/1",
+            "description": "Removes a test/inappropriate donor record. Requires active admin session cookie. Expected HTTP 200 OK (or HTTP 401 if unauthenticated)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Blood Requests",
+      "item": [
+        {
+          "name": "POST Submit Blood Request (Public)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/requests",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requesterName\": \"Dr. Priya Nair\",\n  \"contactNumber\": \"9876543210\",\n  \"patientBloodGroup\": \"B+\",\n  \"hospitalName\": \"Apollo Multi-Speciality Hospital\",\n  \"city\": \"Hyderabad\",\n  \"unitsRequested\": 2,\n  \"urgency\": \"CRITICAL\",\n  \"notes\": \"Immediate surgical requirement in Cardiac OT\",\n  \"requestDate\": \"2026-10-22\"\n}"
+            },
+            "description": "Publicly submits blood request. Default initial status is PENDING (unverified). Expected HTTP 201 Created."
+          }
+        },
+        {
+          "name": "POST Submit Request (Invalid Units Validation)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/requests",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requesterName\": \"Dr. Test\",\n  \"contactNumber\": \"9876543210\",\n  \"patientBloodGroup\": \"B+\",\n  \"hospitalName\": \"City Clinic\",\n  \"city\": \"Delhi\",\n  \"unitsRequested\": 0,\n  \"urgency\": \"NORMAL\"\n}"
+            },
+            "description": "Tests validation for unitsRequested < 1. Expected HTTP 400 Bad Request."
+          }
+        },
+        {
+          "name": "GET List Blood Requests (Admin Protected)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/requests?status=PENDING&page=1&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["requests"],
+              "query": [
+                { "key": "status", "value": "PENDING" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "description": "Lists all blood requests with status filters. Requires active admin session. Returns HTTP 401 if unauthenticated."
+          }
+        },
+        {
+          "name": "PATCH Update Request Status (Admin Protected)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/requests/1/status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"VERIFIED\",\n  \"notes\": \"Verified with hospital blood bank coordinator. Dispatched 2 units.\"\n}"
+            },
+            "description": "Updates blood request status among PENDING, VERIFIED, FULFILLED, and REJECTED. Requires active admin session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Authentication",
+      "item": [
+        {
+          "name": "POST Admin Login (Correct Credentials)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/admin/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"AdminPassword@123\"\n}"
+            },
+            "description": "Verifies credentials with PBKDF2WithHmacSHA256 hash. Sets LIFESAVER_SESSION HTTP cookie. Expected HTTP 200 OK."
+          }
+        },
+        {
+          "name": "POST Admin Login (Wrong Password)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/admin/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"WrongPassword#999\"\n}"
+            },
+            "description": "Tests rejection of invalid administrative password. Expected HTTP 401 Unauthorized."
+          }
+        },
+        {
+          "name": "GET Current Admin Session (/api/admin/me)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/me",
+            "description": "Returns current logged-in admin user details from active session. Expected HTTP 200 OK if logged in, 401 if expired."
+          }
+        },
+        {
+          "name": "POST Admin Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/admin/logout",
+            "description": "Invalidates server-side session and session cookie. Expected HTTP 200 OK."
+          }
+        }
+      ]
+    }
+  ]
+}
